@@ -1,6 +1,8 @@
 import Data.List
+import qualified Data.Map.Strict as Map
 import Test.HUnit  hiding (filter, foo, map)
 import DayThreeData
+import Data.Maybe
 
 type Point = (Int, Int)
 type Segment = (Point, Point)
@@ -125,3 +127,34 @@ sample2A = map parseInstruction ["R75","D30","R83","U83","L12","D49","R71","U7",
 sample2B = map parseInstruction ["U62","R66","U55","R34","D71","R55","D58","R83"]
 
 part1 = minDist dataA dataB
+
+
+expand :: Point -> Instruction -> [Point]
+expand (x,y) ('U', dist) = zip (replicate dist x) (reverse [y-dist..y-1])
+expand (x,y) ('D', dist) = zip (replicate dist x) [y+1..y+dist]
+expand (x,y) ('R', dist) = zip [x+1..x+dist] (replicate dist y)
+expand (x,y) ('L', dist) = zip (reverse [x-dist..x-1]) (replicate dist y)
+
+expandList :: [Instruction] -> [Point]
+expandList instructions = concat (scanl (\points inst -> expand (last points) inst) [(0,0)] instructions)
+
+test2_1 = TestCase (assertEqual "simple up Step" [(0,-1), (0,-2), (0,-3)] (expand (0,0) ('U', 3)))
+test2_2 = TestCase (assertEqual "simple down Step" [(0,1), (0,2), (0,3)] (expand (0,0) ('D', 3)))
+test2_3 = TestCase (assertEqual "simple right Step" [(1,0), (2,0), (3,0)] (expand (0,0) ('R', 3)))
+test2_4 = TestCase (assertEqual "simple left Step" [(-1,0), (-2,0), (-3,0)] (expand (0,0) ('L', 3)))
+
+test2_5 = TestCase (assertEqual "sample 1" (Just 30) (findTimed sample1A sample1B))
+test2_6 = TestCase (assertEqual "sample 2" (Just 610) (findTimed sample2A sample2B))
+
+part2Tests = TestList[test2_1, test2_2, test2_3, test2_4, test2_5, test2_6]
+
+findTimed :: [Instruction] -> [Instruction] -> Maybe Int
+findTimed a b = minimum (map snd allCollisions)
+        where 
+            aMap = Map.fromList(reverse (zip (tail (expandList a)) [1..]))
+            bList = zip (tail (expandList b)) [1..]
+            joined = map (\(point, cost) -> (point, fmap (+cost) (Map.lookup point aMap) )) bList
+            
+            allCollisions = filter (\(p,c) -> isJust c) joined
+
+part2 = findTimed dataA dataB
