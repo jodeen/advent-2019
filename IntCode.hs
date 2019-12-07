@@ -96,6 +96,10 @@ module IntCode where
     isComplete (MachineState pos memory _ _ yield) = opCode == 99 || yield
         where opCode = getMemory Pos pos memory
 
+    finished :: MachineState -> Bool
+    finished (MachineState pos memory _ _ yield) = opCode == 99
+        where opCode = getMemory Pos pos memory
+    
     lpad :: Int -> Int -> String
     lpad num len = reverse (take len (reverse ((replicate len '0') ++ (show num))))
 
@@ -127,6 +131,8 @@ module IntCode where
         TestCase (assertEqual "store" (MachineState 2 [3,2,5] [] [] False) (stor (3, [Pos, Pos, Pos]) (MachineState 0 [3,2,0] [5] [] False))),
         TestCase (assertEqual "store empty" (MachineState 0 [3,2,0] [] [] True) (stor (3, [Pos, Pos, Pos]) (MachineState 0 [3,2,0] [] [] False))),
         TestCase (assertEqual "isComplete 99" True (isComplete (MachineState 0 [99] [] [] False))),
+        TestCase (assertEqual "finished" True (finished (MachineState 0 [99] [] [] False))),
+        TestCase (assertEqual "not finished" False (finished (MachineState 0 [3] [] [] True))),
         TestCase (assertEqual "isComplete yield" True (isComplete (MachineState 0 [3] [] [] True))),
         TestCase (assertEqual "is not Complete" False (isComplete (MachineState 0 [3] [] [] False))),
         TestCase (assertEqual "output" (MachineState 2 [4,2,6] [5] [6] False) (out (4, [Pos, Pos, Pos]) (MachineState 0 [4,2,6] [5] [] False))),

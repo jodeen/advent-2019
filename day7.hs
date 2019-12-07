@@ -40,17 +40,37 @@ part1 = findMax day7Data
 
 blank = (MachineState 0 [] [] [] False)
 
-sample2_1 = doSteps initialState1 (transitions [9,8,7,6,5] [3,26,1001,26,-4,26,3,27,1002,27,2,27,1,27,26,
-    27,4,27,1001,28,-1,28,1005,28,6,99,0,0,5])
+sampleMemory2_1 = [3,26,1001,26,-4,26,3,27,1002,27,2,27,1,27,26,
+    27,4,27,1001,28,-1,28,1005,28,6,99,0,0,5]
+sample2_1 = doSteps initialState1 (transitions [9,8,7,6,5] sampleMemory2_1)
 
-restart :: MachineState -> [Int] -> MachineState
-restart state newInput = process (state {input = (input state) ++ newInput, isYield = False})
 
 
 initialStates :: [Int] -> Memory -> [MachineState]
 initialStates phases memory = (f {input = (input f) ++ [0] }) : r
     where (f: r) = map (\p -> blank {mem = memory, input = [p]}) phases
 
+feedback :: [MachineState] -> [MachineState]
+feedback (one : two: rest) 
+    | (finished newState) && (finished two) = newState : two : rest 
+    | otherwise = feedback (newTwo : (rest ++ [newState]))
+    where 
+        newState = process (one {output = [], isYield = False})
+        newTwo = two {input = (input two) ++ output newState}
+                
+calcThruster :: Memory -> [Int] -> Int
+calcThruster memory phases = head (reverse (output (head (feedback (initialStates phases memory)))))
+
+findMax2 :: [Int] -> Memory -> Int
+findMax2 phases memory = maximum (map (calcThruster memory) (permutations phases))
+    
+
 part2Tests = TestList [
-    TestCase (assertEqual "restart" (MachineState 3 [10, 3, 0, 99] [] [] False) (restart (MachineState 1 [0, 3, 0, 99] [] [] True) [10]))
+    TestCase (assertEqual "sample 2_1" 139629729 (calcThruster sampleMemory2_1 [9,8,7,6,5])),
+    TestCase (assertEqual "sample 2_2" 18216 (calcThruster [3,52,1001,52,-5,52,3,53,1,52,56,54,1007,54,5,55,1005,55,26,1001,54,
+        -5,54,1105,1,12,1,53,54,53,1008,54,0,55,1001,55,1,55,2,53,55,53,4,
+        53,1001,56,-1,56,1005,56,6,99,0,0,0,0,10] [9,7,8,5,6])),
+    TestCase (assertEqual "sample 2_1" 139629729 (findMax2 [5..9] sampleMemory2_1))
     ]
+
+part2 = findMax2 [5..9] day7Data
