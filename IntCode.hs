@@ -165,6 +165,7 @@ module IntCode where
     getOutput state = output state
 
     emptyState = (MachineState 0 ([], Map.empty) [] [] False 0)
+    
     stateWithMem :: [Integer] -> MachineState
     stateWithMem m = emptyState {mem = (m, Map.empty)}
 
